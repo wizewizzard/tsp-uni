@@ -1,10 +1,11 @@
 from sys import maxsize 
 from itertools import permutations
 import graph
+import numpy as np
 
 def tsp(graph):
     n = len(graph)
-    min_paths = []
+    min_path = []
     min_length = float('inf')
 
     for path in permutations(range(1, n)):
@@ -13,38 +14,28 @@ def tsp(graph):
         for node in path:
             current_length += graph[prev][node]
             prev = node
-        current_length += graph[prev][0]  # Добавляем расстояние от последнего узла к начальному
-
+        current_length += graph[prev][0]
         if current_length < min_length:
             min_length = current_length
-            min_paths = [(0,) + path + (0,)]
-        elif min_length == current_length:
-            min_paths.append((0,) + path + (0,))
+            min_path = [0, ] + list(path) + [0, ]
 
-    return min_paths, min_length
+    return min_path, min_length
 
 class BruteForce:
     def tsp(self, graph):
         return tsp(graph.as_adjacency_matrix())
 
+
 brute_force = BruteForce()
-route, dist = brute_force.tsp(graph.Graph(3, [
-     [0, 1, 2.5],
-     [1, 2, 4],
-     [2, 0, 0.3]
-]))
-print(route)
+
+gb = graph.GraphBuilder(vertex_count=3)
+gb.add_edge(0, 1, 2.5).add_edge(1, 2, 4).add_edge(2, 0, 0.3)
+route, dist = brute_force.tsp(gb.build())
 assert dist == 6.8, "Should be 6.8"
 
-route, dist = brute_force.tsp(graph.Graph(4, [
-     [0, 1, 2],
-     [1, 2, 4],
-     [2, 3, 3],
-     [3, 0, 2],
-     [0, 2, 1],
-     [1, 3, 2]
-]))
-print(route)
+gb = graph.GraphBuilder(vertex_count=4)
+gb.add_edge(0, 1, 2).add_edge(1, 2, 4).add_edge(2, 3, 3).add_edge(3, 0, 2).add_edge(0, 2, 1).add_edge(1, 3, 2)
+route, dist = brute_force.tsp(gb.build())
 assert dist == 8, "Should be 8"
 
 gb = graph.GraphBuilder(vertex_count=4)
