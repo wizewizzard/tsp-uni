@@ -10,22 +10,41 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 import networkx as nx
 from random import randint, random
 import time
-from netgraph import InteractiveGraph
+from netgraph import InteractiveGraph, Graph
 from netgraph import EditableGraph
 from netgraph._artists import NodeArtist, EdgeArtist
+from graph import GraphBuilder
 
 matplotlib.use("Qt5Agg")
 
 class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=10, dpi=100):
+    def __init__(self, parent=None, width=5, height=10, dpi=2):
         super(MplCanvas, self).__init__(Figure(figsize=(width, height), dpi=dpi))
         self.setParent(parent)
-
-    def set_graph(self, graph, weights):
+    
+    def set_graph(self, graph):
         self.figure.clf()
         self.ax = self.figure.add_subplot(111, position=[0, 0, 1.0, 1.0])
-        self.weights = weights
-        self.graph = EditableGraph(graph, ax=self.ax, edge_labels=self.weights)
+        self.graph = None
+        max_weight = max([w['weight'] for u, v, w in graph.edges(data=True)])
+        self.graph = EditableGraph(graph, ax=self.ax, 
+                                   node_labels=True,
+                                   node_layout='geometric',
+                                   scale=[1.5, 1.5],
+                                   edge_width=0.5,
+                                   node_layout_kwargs=dict(edge_length={(u,v):w['weight'] / max_weight for u,v,w in graph.edges(data=True)},),
+                                   )
+        self.figure.canvas.draw_idle()
+        
+    def highlight_path(self, path):
+        for i in range(len(path) - 1):
+            edge = (path[i], path[(i + 1)]) if (path[i], path[(i + 1)]) in self.graph.edge_artists else (path[(i + 1)], path[i])
+            
+            self.graph.edge_artists[edge].update_width(0.5 * 1e-2)
+            self.graph.edge_artists[edge].set_alpha(1.0)
+            self.graph.edge_artists[edge].set_label('90000')
+            self.graph.edge_artists[edge].set_color('red')
+        self.figure.canvas.draw_idle()
 
     def get_edges(self):
         from pprint import pprint
@@ -86,6 +105,9 @@ class MainWindow(Qt.QMainWindow):
 
     def init_calc_buttons(self, layout):
         # buttons section
+        all_paths = Qt.QPushButton('Все пути')
+        all_paths.clicked.connect(self.calc_all_paths)
+        layout.addWidget(all_paths)
         brute_force_button = Qt.QPushButton('Полный перебор')
         brute_force_button.clicked.connect(self.calc_with_brute_force)
         layout.addWidget(brute_force_button)
@@ -94,14 +116,17 @@ class MainWindow(Qt.QMainWindow):
         layout.addWidget(greedy_button)
         
     def on_canvas_redraw(self, event):
+        pass
         # from pprint import pprint
         # pprint((vars(self.canvas.graph)))
-        if hasattr(self.canvas, 'graph'):
-            for key in self.canvas.graph.edge_artists:
-                    if self.canvas.graph.edge_label_artists[key].get_text():
-                        self.canvas.weights[key] = float(self.canvas.graph.edge_label_artists[key].get_text())
-            self.print_graph_adjacency_matrix()
-        
+        # if hasattr(self.canvas, 'graph') and self.canvas.graph:
+        #     for edge in self.canvas.graph.edges:
+        #             if edge in self.canvas.graph.edge_label_artists and self.canvas.graph.edge_label_artists[edge].get_text():
+        #                 self.canvas.weights[edge] = float(self.canvas.graph.edge_label_artists[edge].get_text())
+        #             else:
+        #                 self.canvas.weights[edge] = str(random_weight())
+        #                 # self.canvas.graph.edge_label_artists[edge]._text = str(random_weight())
+        #     self.print_graph_adjacency_matrix()
     
     def output_to_info(self, text):
         self.info_box.setPlainText(text)
@@ -115,17 +140,18 @@ class MainWindow(Qt.QMainWindow):
     #подсчет всех путей
     def calc_all_paths(self):
         print(f"calculating all paths...")
+        self.canvas.highlight_path([0, 5, 20, 10, 15, 0])
 
     # полный перебор
     def calc_with_brute_force(self):
         print(f"calculating all paths...")
-        self.canvas.get_edges()
-
-        # from brute_force import bf
-        # paths, len = bf.tsp(self.graph)
-        # self.output_to_info(
-        #     f"length: {len}\n" + paths.__str___())
-        # self.output_to_info("bebebebeb")
+        gb = GraphBuilder(adjacent_matrix=self.graph_to_adjacent_matrix())
+        graph = gb.build()
+        from brute_force import BruteForce
+        paths, len = BruteForce().tsp(matrix=graph)
+        self.output_to_info(
+            f"length: {len}\n" + str(paths))
+        self.output_to_info("bebebebeb")
 
     # жадный перебор
     def calc_with_greedy_search(self):
@@ -138,16 +164,20 @@ class MainWindow(Qt.QMainWindow):
     def randomize_graph(self):
         vertices_count = 5
         start = time.time()
-        graph, weights = randomize_graph(10, 40)
+        graph = randomize_graph(30, 29)
         end = time.time()
         self.output_to_info(f"Graph was generated in {end - start}s")
-        self.canvas.set_graph(graph, weights)
+        
+        self.canvas.set_graph(graph)
             
 
     def print_graph_adjacency_matrix(self):
-        if not hasattr(self.canvas, 'graph'):
+        if not hasattr(self.canvas, 'graph') and not self.canvas:
             return
-        matrix = [[0 for i in range(len(self.canvas.graph.node_artists))] for j in range(len(self.canvas.graph.node_artists))]
+        
+        matrix = [["-" for i in range(len(self.canvas.graph.node_artists))] for j in range(len(self.canvas.graph.node_artists))]
+        for edge in self.canvas.graph.edges:
+            matrix[edge[0]][edge[1]] = matrix[edge[1]][edge[0]] = self.canvas.weights[edge]
         self.table.setColumnCount(len(self.canvas.graph.node_artists))  
         self.table.setRowCount(len(self.canvas.graph.node_artists))   
         self.table.setHorizontalHeaderLabels([str(i) for i in range(len(self.canvas.graph.node_artists))])
@@ -163,38 +193,28 @@ class MainWindow(Qt.QMainWindow):
     def ui_monitoring(self):
         print(f"edit mode: {self.edit_mode}")
 
+    def graph_to_adjacent_matrix(self):
+        matrix = [[None for i in range(len(self.canvas.graph.node_artists))] for j in range(len(self.canvas.graph.node_artists))]
+        for edge in self.canvas.graph.edges:
+            matrix[edge[0]][edge[1]] = matrix[edge[1]][edge[0]] = float(self.canvas.weights[edge])
+        return matrix        
 
-# def randomize_graph(vertices_count, edges_count, min_weight = 1, max_weight = 100):
-#     gb = graph.GraphBuilder(vertex_count=vertices_count)
-#     if edges_count < vertices_count - 1:
-#         raise ValueError(f"edges count must be greater or equal vertices_count-1")
-#     if edges_count > (vertices_count ** 2 - vertices_count) / 2:
-#         raise ValueError(f"edges count must be lesser or equal to (vertices_count ** 2 - vertices_count) / 2")
-#     from networkx.generators.random_graphs import erdos_renyi_graph
-#     g = erdos_renyi_graph(vertices_count, edges_count * 2 / (vertices_count ** 2 - vertices_count) / 2)
-#     for n in g.edges:
-#         gb.add_edge(n[0], n[1], randint(min_weight, max_weight))
-    
-#     return gb.build()
-        
-
-def randomize_graph(vertices_count, edges_count, min_weight = 1, max_weight = 100):
+def randomize_graph(vertices_count, degree = 1, max_weight = 100):
     gb = graph.GraphBuilder(vertex_count=vertices_count)
-    if edges_count < vertices_count - 1:
+    if vertices_count <= 0:
         raise ValueError(f"edges count must be greater or equal vertices_count-1")
-    if edges_count > (vertices_count ** 2 - vertices_count) / 2:
+    if degree < 1:
         raise ValueError(f"edges count must be lesser or equal to (vertices_count ** 2 - vertices_count) / 2")
-    from networkx.generators.random_graphs import erdos_renyi_graph
-    gr = erdos_renyi_graph(vertices_count, edges_count * 2 / (vertices_count ** 2 - vertices_count) / 2)
+    from networkx.generators.random_graphs import random_regular_graph
+    gr = random_regular_graph(degree, vertices_count)
+    gr = gr.to_undirected()
     weights = {}
-    for edge in gr.edges:
-        weights[edge] = "228"
-    return gr, weights
+    for (u,v,w) in gr.edges(data=True):
+        gr.edges[u,v]['weight'] = random_weight()
+    return gr
 
-def onclick(event):
-    print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-          ('double' if event.dblclick else 'single', event.button,
-           event.x, event.y, event.xdata, event.ydata))
+def random_weight(lower=1, upper=100):
+    return randint(lower, upper)
 
 def main():
     app = QApplication(sys.argv)
