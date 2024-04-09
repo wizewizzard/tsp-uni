@@ -14,47 +14,10 @@ from netgraph import InteractiveGraph, Graph
 from netgraph import EditableGraph
 from netgraph._artists import NodeArtist, EdgeArtist
 from graph import GraphBuilder
+from ui.graph import MplCanvas
+from ui.adjacency_matrix import AdjacencyMatrixQWidget
 
 matplotlib.use("Qt5Agg")
-
-class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=10, dpi=2):
-        super(MplCanvas, self).__init__(Figure(figsize=(width, height), dpi=dpi))
-        self.setParent(parent)
-    
-    def set_graph(self, graph):
-        self.figure.clf()
-        self.ax = self.figure.add_subplot(111, position=[0, 0, 1.0, 1.0])
-        self.graph = None
-        max_weight = max([w['weight'] for u, v, w in graph.edges(data=True)])
-        self.graph = EditableGraph(graph, ax=self.ax, 
-                                   node_labels=True,
-                                   node_layout='geometric',
-                                   scale=[1.5, 1.5],
-                                   edge_width=0.5,
-                                   node_layout_kwargs=dict(edge_length={(u,v):w['weight'] / max_weight for u,v,w in graph.edges(data=True)},),
-                                   )
-        self.figure.canvas.draw_idle()
-        
-    def highlight_path(self, path):
-        for i in range(len(path) - 1):
-            edge = (path[i], path[(i + 1)]) if (path[i], path[(i + 1)]) in self.graph.edge_artists else (path[(i + 1)], path[i])
-            
-            self.graph.edge_artists[edge].update_width(0.5 * 1e-2)
-            self.graph.edge_artists[edge].set_alpha(1.0)
-            self.graph.edge_artists[edge].set_label('90000')
-            self.graph.edge_artists[edge].set_color('red')
-        self.figure.canvas.draw_idle()
-
-    def get_edges(self):
-        from pprint import pprint
-        for key in self.graph.edge_artists:
-                pprint(key)
-                pprint(self.graph.edge_label_artists[key].get_text())
-            
-        self.graph.edge_label_artists
-
-        return 
 
 class MainWindow(Qt.QMainWindow):
     
@@ -81,7 +44,7 @@ class MainWindow(Qt.QMainWindow):
         self.info_box = Qt.QPlainTextEdit()
         self.info_box.setReadOnly(True)
         right_column.addWidget(self.info_box)
-        self.table = Qt.QTableWidget()
+        self.table = AdjacencyMatrixQWidget()
         right_column.addWidget(self.table)
         left_column.addLayout(button_layout)
         main_layout.addLayout(left_column)
@@ -116,17 +79,14 @@ class MainWindow(Qt.QMainWindow):
         layout.addWidget(greedy_button)
         
     def on_canvas_redraw(self, event):
-        pass
-        # from pprint import pprint
-        # pprint((vars(self.canvas.graph)))
-        # if hasattr(self.canvas, 'graph') and self.canvas.graph:
-        #     for edge in self.canvas.graph.edges:
-        #             if edge in self.canvas.graph.edge_label_artists and self.canvas.graph.edge_label_artists[edge].get_text():
-        #                 self.canvas.weights[edge] = float(self.canvas.graph.edge_label_artists[edge].get_text())
-        #             else:
-        #                 self.canvas.weights[edge] = str(random_weight())
-        #                 # self.canvas.graph.edge_label_artists[edge]._text = str(random_weight())
-        #     self.print_graph_adjacency_matrix()
+        if hasattr(self.canvas, 'graph') and self.canvas.graph:
+            # for edge in self.canvas.graph.edges:
+            #         if edge in self.canvas.graph.edge_label_artists and self.canvas.graph.edge_label_artists[edge].get_text():
+            #             self.canvas.weights[edge] = float(self.canvas.graph.edge_label_artists[edge].get_text())
+            #         else:
+            #             self.canvas.weights[edge] = str(random_weight())
+                        # self.canvas.graph.edge_label_artists[edge]._text = str(random_weight())
+            self.print_graph_adjacency_matrix()
     
     def output_to_info(self, text):
         self.info_box.setPlainText(text)
@@ -174,18 +134,8 @@ class MainWindow(Qt.QMainWindow):
     def print_graph_adjacency_matrix(self):
         if not hasattr(self.canvas, 'graph') and not self.canvas:
             return
-        
-        matrix = [["-" for i in range(len(self.canvas.graph.node_artists))] for j in range(len(self.canvas.graph.node_artists))]
-        for edge in self.canvas.graph.edges:
-            matrix[edge[0]][edge[1]] = matrix[edge[1]][edge[0]] = self.canvas.weights[edge]
-        self.table.setColumnCount(len(self.canvas.graph.node_artists))  
-        self.table.setRowCount(len(self.canvas.graph.node_artists))   
-        self.table.setHorizontalHeaderLabels([str(i) for i in range(len(self.canvas.graph.node_artists))])
-        self.table.setVerticalHeaderLabels([str(i) for i in range(len(self.canvas.graph.node_artists))])
-        for i in range(len(self.canvas.graph.node_artists)):
-            for j in range(len(self.canvas.graph.node_artists)):
-                self.table.setItem(i, j, Qt.QTableWidgetItem(str(matrix[i][j])))
-        self.table.resizeColumnsToContents()
+        matrix = self.canvas.get_adjacency_matrix()
+        self.table.set_matrix(matrix)  
 
     def print_error(self, error):
         self.output_to_info(f"Error: {error}")
