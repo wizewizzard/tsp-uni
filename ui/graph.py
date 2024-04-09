@@ -11,7 +11,6 @@ class MplCanvas(FigureCanvas):
         self.figure.clf()
         self.ax = self.figure.add_subplot(111, position=[0, 0, 1.0, 1.0])
         self.graph = None
-        max_weight = max([w['weight'] for u, v, w in graph.edges(data=True)])
         self.graph = EditableGraph(graph, 
                                    ax=self.ax, 
                                    node_labels=True,

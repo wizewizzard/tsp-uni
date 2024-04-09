@@ -9,13 +9,14 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import networkx as nx
 from random import randint, random
-import time
 from netgraph import InteractiveGraph, Graph
 from netgraph import EditableGraph
 from netgraph._artists import NodeArtist, EdgeArtist
 from graph import GraphBuilder
 from ui.graph import MplCanvas
 from ui.adjacency_matrix import AdjacencyMatrixQWidget
+from ui.info import InfoOutput
+from ui.command_menu import CommandMenu
 
 matplotlib.use("Qt5Agg")
 
@@ -38,11 +39,10 @@ class MainWindow(Qt.QMainWindow):
         left_column = Qt.QVBoxLayout()
         right_column = Qt.QVBoxLayout()
 
-        self.init_cmd_buttons(button_layout)
         self.init_calc_buttons(button_layout)
+        button_layout.addWidget(CommandMenu(parent=self))
 
-        self.info_box = Qt.QPlainTextEdit()
-        self.info_box.setReadOnly(True)
+        self.info_box = InfoOutput()
         right_column.addWidget(self.info_box)
         self.table = AdjacencyMatrixQWidget()
         right_column.addWidget(self.table)
@@ -57,14 +57,6 @@ class MainWindow(Qt.QMainWindow):
         self.canvas.mpl_connect('draw_event', self.on_canvas_redraw)
         left_column.addWidget(self.canvas)
         self.setCentralWidget(self.central_widget)
-
-    def init_cmd_buttons(self, layout):
-        randomize_graph_btn = Qt.QPushButton('Рандомный граф')
-        randomize_graph_btn.clicked.connect(self.randomize_graph)
-        layout.addWidget(randomize_graph_btn)
-        # adjacency_matrix_btn = Qt.QPushButton('Матрица смежности')
-        # adjacency_matrix_btn.clicked.connect(self.print_graph_adjacency_matrix)
-        # layout.addWidget(adjacency_matrix_btn)
 
     def init_calc_buttons(self, layout):
         # buttons section
@@ -89,13 +81,7 @@ class MainWindow(Qt.QMainWindow):
             self.print_graph_adjacency_matrix()
     
     def output_to_info(self, text):
-        self.info_box.setPlainText(text)
-
-    def toggle_edit_mode(self):
-        if False:
-            print(f"editing mode is already toggled")
-            return
-        self.edit_mode = not self.edit_mode
+        self.info_box.append(text)
 
     #подсчет всех путей
     def calc_all_paths(self):
@@ -121,16 +107,9 @@ class MainWindow(Qt.QMainWindow):
     def calc_with_dynamic_programming(self):
         print(f"calculating with dynamic programming...")
 
-    def randomize_graph(self):
-        vertices_count = 5
-        start = time.time()
-        graph = randomize_graph(30, 29)
-        end = time.time()
-        self.output_to_info(f"Graph was generated in {end - start}s")
-        
+    def set_graph(self, graph):
         self.canvas.set_graph(graph)
             
-
     def print_graph_adjacency_matrix(self):
         if not hasattr(self.canvas, 'graph') and not self.canvas:
             return
@@ -140,31 +119,11 @@ class MainWindow(Qt.QMainWindow):
     def print_error(self, error):
         self.output_to_info(f"Error: {error}")
 
-    def ui_monitoring(self):
-        print(f"edit mode: {self.edit_mode}")
-
     def graph_to_adjacent_matrix(self):
         matrix = [[None for i in range(len(self.canvas.graph.node_artists))] for j in range(len(self.canvas.graph.node_artists))]
         for edge in self.canvas.graph.edges:
             matrix[edge[0]][edge[1]] = matrix[edge[1]][edge[0]] = float(self.canvas.weights[edge])
         return matrix        
-
-def randomize_graph(vertices_count, degree = 1, max_weight = 100):
-    gb = graph.GraphBuilder(vertex_count=vertices_count)
-    if vertices_count <= 0:
-        raise ValueError(f"edges count must be greater or equal vertices_count-1")
-    if degree < 1:
-        raise ValueError(f"edges count must be lesser or equal to (vertices_count ** 2 - vertices_count) / 2")
-    from networkx.generators.random_graphs import random_regular_graph
-    gr = random_regular_graph(degree, vertices_count)
-    gr = gr.to_undirected()
-    weights = {}
-    for (u,v,w) in gr.edges(data=True):
-        gr.edges[u,v]['weight'] = random_weight()
-    return gr
-
-def random_weight(lower=1, upper=100):
-    return randint(lower, upper)
 
 def main():
     app = QApplication(sys.argv)
