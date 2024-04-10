@@ -8,6 +8,7 @@ class InfoOutput(QWidget):
                 self.btnPress1 = QPushButton("Clear")
                 self.textEdit.setReadOnly(True)
                 layout = QVBoxLayout()
+                layout.setContentsMargins(0,0,0,0)
                 layout.addWidget(self.textEdit)
                 layout.addWidget(self.btnPress1)
                 self.setLayout(layout)

@@ -17,6 +17,7 @@ from ui.graph import MplCanvas
 from ui.adjacency_matrix import AdjacencyMatrixQWidget
 from ui.info import InfoOutput
 from ui.command_menu import CommandMenu
+from ui.generate_graph_popup import RandomizeGraphPopUp
 
 matplotlib.use("Qt5Agg")
 
@@ -30,32 +31,44 @@ class MainWindow(Qt.QMainWindow):
         self.show()
 
     def initUI(self):
-        self.resize(1280, 1080)
+        self.resize(1480, 1080)
         self.move(250, 0)
         self.title = 'Оптимизация задачи коммивояжера'
         self.central_widget = Qt.QWidget()
         main_layout = Qt.QHBoxLayout()
         button_layout = Qt.QVBoxLayout()
-        left_column = Qt.QVBoxLayout()
-        right_column = Qt.QVBoxLayout()
+        col1 = Qt.QVBoxLayout()
+        col2 = Qt.QVBoxLayout()
+        col3 = Qt.QGridLayout()
+        col1_widget = Qt.QWidget()
+        col2_widget = Qt.QWidget()
+        col3_widget = Qt.QWidget()
+        col1_widget.setFixedWidth(300)
+        col3_widget.setFixedWidth(300)
+        col1_widget.setLayout(col1)
+        col2_widget.setLayout(col2)
+        col3_widget.setLayout(col3)
 
         self.init_calc_buttons(button_layout)
         button_layout.addWidget(CommandMenu(parent=self))
 
         self.info_box = InfoOutput()
-        right_column.addWidget(self.info_box)
         self.table = AdjacencyMatrixQWidget()
-        right_column.addWidget(self.table)
-        left_column.addLayout(button_layout)
-        main_layout.addLayout(left_column)
-        main_layout.addLayout(right_column)
-        self.central_widget = Qt.QWidget()
-        self.central_widget.setLayout(main_layout)
         self.canvas = MplCanvas(parent=self, width=8, height=8, dpi=100)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
         self.canvas.mpl_connect('draw_event', self.on_canvas_redraw)
-        left_column.addWidget(self.canvas)
+        col1.addLayout(button_layout)
+        col2.addWidget(self.canvas)
+        col3.addWidget(self.table, 1, 0, 3, 1)
+        col3.addWidget(self.info_box, 4, 0, 8, 1)
+        main_layout.addWidget(col1_widget)
+        main_layout.addWidget(col2_widget)
+        main_layout.addWidget(col3_widget)
+
+        self.central_widget = Qt.QWidget()
+        self.central_widget.setLayout(main_layout)
+        
         self.setCentralWidget(self.central_widget)
 
     def init_calc_buttons(self, layout):
@@ -128,6 +141,9 @@ class MainWindow(Qt.QMainWindow):
 def main():
     app = QApplication(sys.argv)
     window = MainWindow()
+    with open("./qss/macos.qss", "r") as f:
+        _style = f.read()
+        app.setStyleSheet(_style)
     window.show()
     sys.exit(app.exec_())
 
