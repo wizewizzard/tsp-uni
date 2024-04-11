@@ -1,16 +1,12 @@
 from sys import maxsize 
-from itertools import permutations
-import graph
-from typing import DefaultDict
-from sys import maxsize
 
 INT_MAX = 2147483647
  
 class Greedy:
     def tsp(self, matrix, start = 0):
-        return tsp(matrix)
+        return tsp(matrix, start)
 
-def tsp(matrix):
+def tsp(matrix, start):
     path = []
     visited = [0] * len(matrix)
     cost = 0

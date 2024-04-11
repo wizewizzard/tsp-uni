@@ -1,6 +1,5 @@
 from sys import maxsize
 from itertools import permutations
-import graph
 
 class TravellingSalesmanProblem:
     def __init__(self, distance, start):

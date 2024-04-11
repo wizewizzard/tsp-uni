@@ -1,23 +1,17 @@
 import sys
-import graph
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-import networkx as nx
 from random import randint, random
-from netgraph import InteractiveGraph, Graph
-from netgraph import EditableGraph
-from netgraph._artists import NodeArtist, EdgeArtist
-from graph import GraphBuilder
 from ui.graph import MplCanvas
 from ui.adjacency_matrix import AdjacencyMatrixQWidget
 from ui.info import InfoOutput
 from ui.command_menu import CommandMenu
 from ui.generate_graph_popup import RandomizeGraphPopUp
+from algorithms.brute_force import BruteForce
+from algorithms.greedy import Greedy
+from algorithms.all_paths import AllPaths
+from utils import path_with_arrows
 
 matplotlib.use("Qt5Agg")
 
@@ -92,34 +86,34 @@ class MainWindow(Qt.QMainWindow):
             #             self.canvas.weights[edge] = str(random_weight())
                         # self.canvas.graph.edge_label_artists[edge]._text = str(random_weight())
             self.print_graph_adjacency_matrix()
-    
-    def output_to_info(self, text):
-        self.info_box.append(text)
 
     #подсчет всех путей
     def calc_all_paths(self):
-        print(f"calculating all paths...")
+        self.output_to_info(f"calculating all paths...")
+        ap = AllPaths()
+        paths = ap.all_paths(self.canvas.get_adjacency_matrix())
+        for p in paths:
+            self.output_to_info(path_with_arrows(p))
         
-        self.canvas.highlight_path([i for i in range(len(self.canvas.graph.nodes))] + [0])
-
     # полный перебор
     def calc_with_brute_force(self):
-        print(f"calculating all paths...")
-        gb = GraphBuilder(adjacent_matrix=self.graph_to_adjacent_matrix())
-        graph = gb.build()
-        from algorithms.brute_force import BruteForce
-        paths, len = BruteForce().tsp(matrix=graph)
-        self.output_to_info(
-            f"length: {len}\n" + str(paths))
-        self.output_to_info("bebebebeb")
+        self.output_to_info(f"calculating using bruteforce...")
+        path, len = BruteForce().tsp(matrix=self.canvas.get_adjacency_matrix())
+        if path != None:
+            self.canvas.highlight_path(path)
+            self.output_to_info(path_with_arrows((path, len)))
 
     # жадный перебор
     def calc_with_greedy_search(self):
-        print(f"calculating with greedy search...")
+        self.output_to_info(f"calculating with greedy search...")
+        path, len = Greedy().tsp(matrix=self.canvas.get_adjacency_matrix())
+        if path != None:
+            self.canvas.highlight_path(path)
+            self.output_to_info(path_with_arrows((path, len)))
 
     # динамическое программирование
     def calc_with_dynamic_programming(self):
-        print(f"calculating with dynamic programming...")
+        self.output_to_info(f"calculating with dynamic programming...")
 
     def set_graph(self, graph):
         self.canvas.set_graph(graph)
@@ -132,12 +126,9 @@ class MainWindow(Qt.QMainWindow):
 
     def print_error(self, error):
         self.output_to_info(f"Error: {error}")
-
-    def graph_to_adjacent_matrix(self):
-        matrix = [[None for i in range(len(self.canvas.graph.node_artists))] for j in range(len(self.canvas.graph.node_artists))]
-        for edge in self.canvas.graph.edges:
-            matrix[edge[0]][edge[1]] = matrix[edge[1]][edge[0]] = float(self.canvas.weights[edge])
-        return matrix        
+    
+    def output_to_info(self, text):
+        self.info_box.append(text)    
 
 def main():
     app = QApplication(sys.argv)

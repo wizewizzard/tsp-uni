@@ -28,6 +28,7 @@ class MplCanvas(FigureCanvas):
             
             self.graph.edge_artists[edge].update_width(0.5 * 1e-2)
             self.graph.edge_artists[edge].set_alpha(1.0)
+            self.graph.edge_artists[edge].set_alpha(1.0)
             self.graph.edge_artists[edge].set_label('90000')
             self.graph.edge_artists[edge].set_color('red')
         self.figure.canvas.draw_idle()

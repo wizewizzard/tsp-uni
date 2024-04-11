@@ -1,6 +1,5 @@
 from sys import maxsize 
 from itertools import permutations
-import graph
 import numpy as np
 
 def tsp(matrix, start):
@@ -35,7 +34,6 @@ matrix = [
     [0.3, 4, 0]
 ]
 route, dist = brute_force.tsp(matrix)
-print(dist)
 assert dist == 6.8, "Should be 6.8"
 
 matrix = [
@@ -54,7 +52,6 @@ matrix = [
     [1, 1, 1, 0]
 ]
 route, dist = brute_force.tsp(matrix)
-print(route)
 assert dist == 4, "Should be 4"
 
 distance_matrix = [
@@ -68,5 +65,4 @@ distance_matrix = [
         [391, 136, 152, 273, 182, 158, 140, 0],
 ]
 
-print(tsp(distance_matrix))
 assert brute_force.tsp(distance_matrix)[1] == 1072

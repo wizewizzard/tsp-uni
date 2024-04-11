@@ -22,6 +22,6 @@ then
         exit 1
     fi
 fi
-# python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 
 echo Successfully initialized environment and installed all dependencies.
