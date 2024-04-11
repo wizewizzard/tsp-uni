@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
 from random import randint, random
+from config import get_config
 from ui.graph import MplCanvas
 from ui.adjacency_matrix import AdjacencyMatrixQWidget
 from ui.info import InfoOutput
@@ -17,17 +18,17 @@ matplotlib.use("Qt5Agg")
 
 class MainWindow(Qt.QMainWindow):
     
-    def __init__(self, parent=None):
+    def __init__(self, cfg, parent=None):
         super(MainWindow, self).__init__(parent)
         self.edit_mode = False
         self.graph = None
-        self.initUI()
+        self.initUI(cfg)
         self.show()
 
-    def initUI(self):
-        self.resize(1480, 1080)
-        self.move(250, 0)
-        self.title = 'Оптимизация задачи коммивояжера'
+    def initUI(self, cfg):
+        self.resize(cfg['size']['width'], cfg['size']['height'])
+        self.move(cfg['pos']['x'], cfg['pos']['y'])
+        self.title = cfg['text']['main_window_title']
         self.central_widget = Qt.QWidget()
         main_layout = Qt.QHBoxLayout()
         button_layout = Qt.QVBoxLayout()
@@ -43,8 +44,8 @@ class MainWindow(Qt.QMainWindow):
         col2_widget.setLayout(col2)
         col3_widget.setLayout(col3)
 
-        self.init_calc_buttons(button_layout)
-        button_layout.addWidget(CommandMenu(parent=self))
+        self.init_calc_buttons(button_layout, cfg)
+        button_layout.addWidget(CommandMenu(parent=self, cfg=cfg))
 
         self.info_box = InfoOutput()
         self.table = AdjacencyMatrixQWidget()
@@ -65,15 +66,15 @@ class MainWindow(Qt.QMainWindow):
         
         self.setCentralWidget(self.central_widget)
 
-    def init_calc_buttons(self, layout):
+    def init_calc_buttons(self, layout, cfg):
         # buttons section
-        all_paths = Qt.QPushButton('Все пути')
+        all_paths = Qt.QPushButton(cfg['text']['all_paths_btn_text'])
         all_paths.clicked.connect(self.calc_all_paths)
         layout.addWidget(all_paths)
-        brute_force_button = Qt.QPushButton('Полный перебор')
+        brute_force_button = Qt.QPushButton(cfg['text']['bruteforce_btn_text'])
         brute_force_button.clicked.connect(self.calc_with_brute_force)
         layout.addWidget(brute_force_button)
-        greedy_button = Qt.QPushButton('Жадный алгоритм')
+        greedy_button = Qt.QPushButton(cfg['text']['greedy_btn_text'])
         greedy_button.clicked.connect(self.calc_with_greedy_search)
         layout.addWidget(greedy_button)
         
@@ -89,27 +90,41 @@ class MainWindow(Qt.QMainWindow):
 
     #подсчет всех путей
     def calc_all_paths(self):
-        self.output_to_info(f"calculating all paths...")
+        self.output_to_info(f"Вычисление набора всех путей...")
         ap = AllPaths()
-        paths = ap.all_paths(self.canvas.get_adjacency_matrix())
-        for p in paths:
-            self.output_to_info(path_with_arrows(p))
+        try:
+            paths = ap.all_paths(self.canvas.get_adjacency_matrix())
+            for p in paths:
+                self.output_to_info(path_with_arrows(p))
+        except Exception as err:
+            self.output_error(f"Вычисление набора всех путей завершилось с ошибкой.")
+            print(f"Unexpected {err=}, {type(err)=}")
+
         
     # полный перебор
     def calc_with_brute_force(self):
-        self.output_to_info(f"calculating using bruteforce...")
-        path, len = BruteForce().tsp(matrix=self.canvas.get_adjacency_matrix())
-        if path != None:
+        self.output_to_info(f"Вычисление кратчайшего пути полным перебором...")
+        try:
+            path, len = BruteForce().tsp(matrix=self.canvas.get_adjacency_matrix())
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, len)))
+            self.output_to_info(f"Вычисление кратчайшего пути полным перебором завершено.")
+        except Exception as err:
+            self.output_error(f"Вычисление кратчайшего пути полным перебором завершилось с ошибкой.")
+            print(f"Unexpected {err=}, {type(err)=}")
+
 
     # жадный перебор
     def calc_with_greedy_search(self):
         self.output_to_info(f"calculating with greedy search...")
-        path, len = Greedy().tsp(matrix=self.canvas.get_adjacency_matrix())
-        if path != None:
+        try:
+            path, len = Greedy().tsp(matrix=self.canvas.get_adjacency_matrix())
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, len)))
+            self.output_to_info(f"Вычисление кратчайшего пути жадным алгоритмом завершено.")
+        except Exception as err:
+            self.output_error(f"Вычисление кратчайшего пути жадным алгоритмом завершилось с ошибкой.")
+            print(f"Unexpected {err=}, {type(err)=}")
 
     # динамическое программирование
     def calc_with_dynamic_programming(self):
@@ -124,15 +139,16 @@ class MainWindow(Qt.QMainWindow):
         matrix = self.canvas.get_adjacency_matrix()
         self.table.set_matrix(matrix)  
 
-    def print_error(self, error):
+    def output_error(self, error):
         self.output_to_info(f"Error: {error}")
     
     def output_to_info(self, text):
         self.info_box.append(text)    
 
 def main():
+    cfg = get_config()
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(cfg=cfg)
     with open("./qss/macos.qss", "r") as f:
         _style = f.read()
         app.setStyleSheet(_style)

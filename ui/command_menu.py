@@ -6,29 +6,28 @@ from ui.generate_graph_popup import RandomizeGraphPopUp
 from ui.build_graph_by_adjacency_matrix import BuildGraphByAjacencyMatrixPopUp
 
 class CommandMenu(QWidget):
-    def __init__(self,parent=None,
+    def __init__(self,
+                cfg,
+                parent=None,
                 set_graph_cb=None,
                 output_info_cb=None):
         super().__init__(parent)
 
         self.parent = parent
         lbl = QLabel(self)
-        lbl.setText('Command pallete')
+        lbl.setText(cfg['text']['command_pallete_label'])
         self.set_graph_cb = set_graph_cb
         self.output_info_cb = output_info_cb
-        self.randomize_graph_btn = QPushButton("Generate")
-        self.build_graph_graph_btn = QPushButton("Build by adj. matrix")
-        self.help_btn = QPushButton("Help")
+        self.randomize_graph_btn = QPushButton(cfg['text']['randomize_graph_btn_text'])
+        self.build_graph_graph_btn = QPushButton(cfg['text']['build_graph_graph_btn_text'])
         layout = QVBoxLayout()
         layout.addWidget(lbl)
         layout.addWidget(self.randomize_graph_btn)
         layout.addWidget(self.build_graph_graph_btn)
-        layout.addWidget(self.help_btn)
         self.setLayout(layout)
 
         self.randomize_graph_btn.clicked.connect(self.randomize_graph_btn_clicked)
         self.build_graph_graph_btn.clicked.connect(self.build_graph_graph_btn_clicked)
-        self.help_btn.clicked.connect(self.randomize_graph_btn_clicked)
 
     def build_graph_graph_btn_clicked(self):
         w = BuildGraphByAjacencyMatrixPopUp()
