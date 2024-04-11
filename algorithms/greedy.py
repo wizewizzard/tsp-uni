@@ -7,10 +7,10 @@ from sys import maxsize
 INT_MAX = 2147483647
  
 class Greedy:
-    def tsp(self, matrix):
+    def tsp(self, matrix, start = 0):
         return tsp(matrix)
 
-def tsp(matrix, start = 0):
+def tsp(matrix):
     path = []
     visited = [0] * len(matrix)
     cost = 0
@@ -73,5 +73,5 @@ distance_matrix = [
         [391, 136, 152, 273, 182, 158, 140, 0],
 ]
 
-print(tsp(distance_matrix))
-assert tsp(distance_matrix)[1] == 1126
+print(greedy_algorithm.tsp(distance_matrix))
+assert greedy_algorithm.tsp(distance_matrix)[1] == 1126

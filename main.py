@@ -99,14 +99,15 @@ class MainWindow(Qt.QMainWindow):
     #подсчет всех путей
     def calc_all_paths(self):
         print(f"calculating all paths...")
-        self.canvas.highlight_path([0, 5, 20, 10, 15, 0])
+        
+        self.canvas.highlight_path([i for i in range(len(self.canvas.graph.nodes))] + [0])
 
     # полный перебор
     def calc_with_brute_force(self):
         print(f"calculating all paths...")
         gb = GraphBuilder(adjacent_matrix=self.graph_to_adjacent_matrix())
         graph = gb.build()
-        from brute_force import BruteForce
+        from algorithms.brute_force import BruteForce
         paths, len = BruteForce().tsp(matrix=graph)
         self.output_to_info(
             f"length: {len}\n" + str(paths))
