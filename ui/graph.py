@@ -11,6 +11,7 @@ class MplCanvas(FigureCanvas):
         self.figure.clf()
         self.ax = self.figure.add_subplot(111, position=[0, 0, 1.0, 1.0])
         self.graph = None
+        self.path_memo = {}
         self.graph = EditableGraph(graph, 
                                    ax=self.ax, 
                                    node_labels=True,
@@ -23,15 +24,31 @@ class MplCanvas(FigureCanvas):
         self.figure.canvas.draw_idle()
         
     def highlight_path(self, path):
+        self.path_memo = {}
         for i in range(len(path) - 1):
             edge = (path[i], path[(i + 1)]) if (path[i], path[(i + 1)]) in self.graph.edge_artists else (path[(i + 1)], path[i])
-            
-            self.graph.edge_artists[edge].update_width(0.5 * 1e-2)
+            self.path_memo[edge] = {
+                "width": self.graph.edge_artists[edge].width,
+                "alpha": self.graph.edge_artists[edge].get_alpha(),
+                "color": self.graph.edge_artists[edge].get_edgecolor()
+            }
+            self.graph.edge_artists[edge].update_width(1.5 * 1e-2)
             self.graph.edge_artists[edge].set_alpha(1.0)
-            self.graph.edge_artists[edge].set_alpha(1.0)
-            self.graph.edge_artists[edge].set_label('90000')
+            # self.graph.edge_artists[edge].set_linewidth(0.006)
             self.graph.edge_artists[edge].set_color('red')
         self.figure.canvas.draw_idle()
+
+    def remove_path_highlight(self):
+        if self.path_memo == None:
+            return
+        path = self.path_memo
+        for edge, props in self.path_memo.items():
+            self.graph.edge_artists[edge].update_width(props['width'])
+            self.graph.edge_artists[edge].set_alpha(props['alpha'])
+            # self.graph.edge_artists[edge].set_linewidth(0.006)
+            self.graph.edge_artists[edge].set_color(props['color'])
+        self.figure.canvas.draw_idle()
+        self.path_memo = None
 
     def get_adjacency_matrix(self):
         matrix = [[0] * len(self.graph.nodes) for _ in range(len(self.graph.nodes)) ]

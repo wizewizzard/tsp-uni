@@ -16,7 +16,7 @@ class InfoOutput(QWidget):
                 self.btnPress1.clicked.connect(self.btnPress1_Clicked)
 
         def append(self, text):
-            self.textEdit.setPlainText(self.textEdit.toPlainText() + text + "\n")
+            self.textEdit.append(text + "\n")
 
         def clear(self):
             self.textEdit.setPlainText("")
