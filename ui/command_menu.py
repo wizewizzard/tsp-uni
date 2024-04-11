@@ -14,16 +14,16 @@ class CommandMenu(QWidget):
         super().__init__(parent)
 
         self.parent = parent
-        lbl = QLabel(self)
-        lbl.setText(cfg['text']['command_pallete_label'])
+        # lbl = QLabel(self)
+        # lbl.setText(cfg['text']['command_pallete_label'])
         self.set_graph_cb = set_graph_cb
         self.output_info_cb = output_info_cb
         self.randomize_graph_btn = QPushButton(cfg['text']['randomize_graph_btn_text'])
         self.build_graph_graph_btn = QPushButton(cfg['text']['build_graph_graph_btn_text'])
         layout = QVBoxLayout()
-        layout.addWidget(lbl)
+        # layout.addWidget(lbl)
         layout.addWidget(self.randomize_graph_btn)
-        layout.addWidget(self.build_graph_graph_btn)
+        # layout.addWidget(self.build_graph_graph_btn)
         self.setLayout(layout)
 
         self.randomize_graph_btn.clicked.connect(self.randomize_graph_btn_clicked)

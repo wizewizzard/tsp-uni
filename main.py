@@ -4,7 +4,7 @@ import traceback
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
-from random import randint, random
+from random import randint, random, uniform
 from config import get_config
 from ui.algorithm_menu import AlgorithmMenu
 from ui.graph import MplCanvas
@@ -48,8 +48,8 @@ class MainWindow(Qt.QMainWindow):
         col2_widget.setLayout(col2)
         col3_widget.setLayout(col3)
 
-        button_layout.addWidget(AlgorithmMenu(parent=self, cfg=cfg))
         button_layout.addWidget(CommandMenu(parent=self, cfg=cfg))
+        button_layout.addWidget(AlgorithmMenu(parent=self, cfg=cfg))
 
         self.info_box = InfoOutput(parent=self)
         self.table = AdjacencyMatrixQWidget(parent=self)
@@ -79,8 +79,8 @@ class MainWindow(Qt.QMainWindow):
         try:
             self.canvas.remove_path_highlight()
             paths = ap.all_paths(self.G)
-            for p in paths:
-                self.output_to_info(path_with_arrows(p))
+            for (p, l) in paths:
+                self.output_to_info(path_with_arrows((p, round(l, 1))))
         except Exception as err:
             self.output_error(f"Вычисление набора всех путей завершилось с ошибкой.")
             traceback.print_exception(*sys.exc_info())
@@ -97,7 +97,7 @@ class MainWindow(Qt.QMainWindow):
             self.canvas.remove_path_highlight()
             path, len = BruteForce().tsp(matrix=self.G)
             self.canvas.highlight_path(path)
-            self.output_to_info(path_with_arrows((path, len)))
+            self.output_to_info(path_with_arrows((path, round(len, 1))))
             self.output_to_info(f"Вычисление кратчайшего пути полным перебором завершено.")
         except Exception as err:
             self.output_error(f"Вычисление кратчайшего пути полным перебором завершилось с ошибкой.")
@@ -117,7 +117,7 @@ class MainWindow(Qt.QMainWindow):
             start_vertex = w.getResults()
             path, path_len = Greedy().tsp(matrix=self.G, start=start_vertex)
             self.canvas.highlight_path(path)
-            self.output_to_info(path_with_arrows((path, path_len)))
+            self.output_to_info(path_with_arrows((path, round(path_len, 1))))
             self.output_to_info(f"Вычисление кратчайшего пути жадным алгоритмом завершено.")
         except Exception as err:
             self.output_error(f"Вычисление кратчайшего пути жадным алгоритмом завершилось с ошибкой.")
@@ -127,6 +127,16 @@ class MainWindow(Qt.QMainWindow):
     # динамическое программирование
     def calc_with_dynamic_programming(self):
         self.output_to_info(f"calculating with dynamic programming...")
+
+    # graph update
+    def update_graph(self, matrix):
+        if self.G == None:
+            self.output_error(f"Создайте граф.")
+            return
+        
+
+        self.canvas.set_matrix(self.G)
+        self.table.set_matrix(self.G)    
 
     # рандомный граф
     def randomize_graph(self, vertex_count, degree):
@@ -158,7 +168,7 @@ def randomize_graph_fn(vertices_count, degree = 1, max_weight = 100):
     return matrix
 
 def random_weight(lower=1, upper=100):
-    return randint(lower, upper)
+    return round(uniform(lower,upper), 1)
 
 def main():
     cfg = get_config()
