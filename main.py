@@ -1,10 +1,12 @@
 import sys
+import time
 import traceback
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
 from random import randint, random
 from config import get_config
+from ui.algorithm_menu import AlgorithmMenu
 from ui.graph import MplCanvas
 from ui.adjacency_matrix import AdjacencyMatrixQWidget
 from ui.greedy_algorithm_pop import GreedyAlgorithmPopUp
@@ -25,7 +27,7 @@ class MainWindow(Qt.QMainWindow):
         self.edit_mode = False
         self.initUI(cfg)
         self.show()
-        self.graph = None
+        self.G = None
 
     def initUI(self, cfg):
         self.resize(cfg['size']['width'], cfg['size']['height'])
@@ -46,15 +48,14 @@ class MainWindow(Qt.QMainWindow):
         col2_widget.setLayout(col2)
         col3_widget.setLayout(col3)
 
-        self.init_calc_buttons(button_layout, cfg)
+        button_layout.addWidget(AlgorithmMenu(parent=self, cfg=cfg))
         button_layout.addWidget(CommandMenu(parent=self, cfg=cfg))
 
-        self.info_box = InfoOutput()
-        self.table = AdjacencyMatrixQWidget()
+        self.info_box = InfoOutput(parent=self)
+        self.table = AdjacencyMatrixQWidget(parent=self)
         self.canvas = MplCanvas(parent=self, width=8, height=8, dpi=100)
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
-        self.canvas.mpl_connect('draw_event', self.on_canvas_redraw)
         col1.addLayout(button_layout)
         col2.addWidget(self.canvas)
         col3.addWidget(self.table, 1, 0, 3, 1)
@@ -65,42 +66,19 @@ class MainWindow(Qt.QMainWindow):
 
         self.central_widget = Qt.QWidget()
         self.central_widget.setLayout(main_layout)
-        
+    
         self.setCentralWidget(self.central_widget)
-
-    def init_calc_buttons(self, layout, cfg):
-        # buttons section
-        all_paths = Qt.QPushButton(cfg['text']['all_paths_btn_text'])
-        all_paths.clicked.connect(self.calc_all_paths)
-        layout.addWidget(all_paths)
-        brute_force_button = Qt.QPushButton(cfg['text']['bruteforce_btn_text'])
-        brute_force_button.clicked.connect(self.calc_with_brute_force)
-        layout.addWidget(brute_force_button)
-        greedy_button = Qt.QPushButton(cfg['text']['greedy_btn_text'])
-        greedy_button.clicked.connect(self.calc_with_greedy_search)
-        layout.addWidget(greedy_button)
-        
-    def on_canvas_redraw(self, event):
-        if hasattr(self.canvas, 'graph') and self.canvas.graph:
-            # for edge in self.canvas.graph.edges:
-            #         if edge in self.canvas.graph.edge_label_artists and self.canvas.graph.edge_label_artists[edge].get_text():
-            #             self.canvas.weights[edge] = float(self.canvas.graph.edge_label_artists[edge].get_text())
-            #         else:
-            #             self.canvas.weights[edge] = str(random_weight())
-                        # self.canvas.graph.edge_label_artists[edge]._text = str(random_weight())
-            # self.print_graph_adjacency_matrix()
-            pass
 
     #подсчет всех путей
     def calc_all_paths(self):
-        if not hasattr(self.canvas, 'graph') and not self.canvas:
+        if self.G == None:
             self.output_error(f"Создайте граф.")
             return
         self.output_to_info(f"Вычисление набора всех путей...")
         ap = AllPaths()
         try:
             self.canvas.remove_path_highlight()
-            paths = ap.all_paths(self.canvas.get_adjacency_matrix())
+            paths = ap.all_paths(self.G)
             for p in paths:
                 self.output_to_info(path_with_arrows(p))
         except Exception as err:
@@ -111,13 +89,13 @@ class MainWindow(Qt.QMainWindow):
         
     # полный перебор
     def calc_with_brute_force(self):
-        if not hasattr(self.canvas, 'graph') and not self.canvas:
+        if self.G == None:
             self.output_error(f"Создайте граф.")
             return
         self.output_to_info(f"Вычисление кратчайшего пути полным перебором...")
         try:
             self.canvas.remove_path_highlight()
-            path, len = BruteForce().tsp(matrix=self.canvas.get_adjacency_matrix())
+            path, len = BruteForce().tsp(matrix=self.G)
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, len)))
             self.output_to_info(f"Вычисление кратчайшего пути полным перебором завершено.")
@@ -129,7 +107,7 @@ class MainWindow(Qt.QMainWindow):
 
     # жадный перебор
     def calc_with_greedy_search(self):
-        if not hasattr(self.canvas, 'graph') and not self.canvas:
+        if self.G == None:
             self.output_error(f"Создайте граф.")
             return
         self.output_to_info(f"calculating with greedy search...")
@@ -137,7 +115,7 @@ class MainWindow(Qt.QMainWindow):
             self.canvas.remove_path_highlight()
             w = GreedyAlgorithmPopUp(vertex_count=len(self.canvas.graph.nodes))
             start_vertex = w.getResults()
-            path, path_len = Greedy().tsp(matrix=self.canvas.get_adjacency_matrix(), start=start_vertex)
+            path, path_len = Greedy().tsp(matrix=self.G, start=start_vertex)
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, path_len)))
             self.output_to_info(f"Вычисление кратчайшего пути жадным алгоритмом завершено.")
@@ -150,20 +128,37 @@ class MainWindow(Qt.QMainWindow):
     def calc_with_dynamic_programming(self):
         self.output_to_info(f"calculating with dynamic programming...")
 
-    def set_graph(self, graph):
-        self.canvas.set_graph(graph)
-            
-    def print_graph_adjacency_matrix(self):
-        if not hasattr(self.canvas, 'graph') and not self.canvas:
-            return
-        matrix = self.canvas.get_adjacency_matrix()
-        self.table.set_matrix(matrix)  
+    # рандомный граф
+    def randomize_graph(self, vertex_count, degree):
+        start = time.time()
+        self.G = randomize_graph_fn(vertex_count, degree)
+        end = time.time()
+        self.canvas.set_matrix(self.G)
+        self.table.set_matrix(self.G)     
+        self.output_to_info(f"Graph was generated in {end - start}s")
 
     def output_error(self, error):
         self.output_to_info(f"<span style=\" font-weight:600; color:#ff0000;\" >{error}</span>")
     
     def output_to_info(self, text):
         self.info_box.append(text)    
+
+
+def randomize_graph_fn(vertices_count, degree = 1, max_weight = 100):
+    if vertices_count <= 0:
+        raise ValueError(f"edges count must be greater or equal vertices_count-1")
+    if degree < 1:
+        raise ValueError(f"edges count must be lesser or equal to (vertices_count ** 2 - vertices_count) / 2")
+    from networkx.generators.random_graphs import random_regular_graph
+    gr = random_regular_graph(degree, vertices_count)
+    gr = gr.to_undirected()
+    matrix = [[0] * vertices_count for _ in range(vertices_count)]
+    for (u,v) in gr.edges():
+        matrix[u][v] = matrix[v][u] = random_weight()
+    return matrix
+
+def random_weight(lower=1, upper=100):
+    return randint(lower, upper)
 
 def main():
     cfg = get_config()

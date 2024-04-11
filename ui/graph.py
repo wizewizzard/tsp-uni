@@ -7,19 +7,23 @@ class MplCanvas(FigureCanvas):
         super(MplCanvas, self).__init__(Figure(figsize=(width, height), dpi=dpi))
         self.setParent(parent)
     
-    def set_graph(self, graph):
+    def set_matrix(self, adjacency_matrix):
+        edges = []
+        for i in range(len(adjacency_matrix)):
+            for j in range(i, len(adjacency_matrix)):
+                if adjacency_matrix[i][j] > 0:
+                    edges.append([i, j, adjacency_matrix[i][j]])
         self.figure.clf()
         self.ax = self.figure.add_subplot(111, position=[0, 0, 1.0, 1.0])
         self.graph = None
         self.path_memo = {}
-        self.graph = EditableGraph(graph, 
+        self.graph = EditableGraph(edges, 
                                    ax=self.ax, 
                                    node_labels=True,
                                    node_layout='spring',
                                    scale=[1.5, 1.5],
                                    edge_width=0.5,
                                    edge_label_fontdict=dict(size=0),
-                                   edge_labels={(u,v):str(w['weight']) for u,v,w in graph.edges(data=True)},
                                    )
         self.figure.canvas.draw_idle()
         
@@ -45,13 +49,6 @@ class MplCanvas(FigureCanvas):
         for edge, props in self.path_memo.items():
             self.graph.edge_artists[edge].update_width(props['width'])
             self.graph.edge_artists[edge].set_alpha(props['alpha'])
-            # self.graph.edge_artists[edge].set_linewidth(0.006)
             self.graph.edge_artists[edge].set_color(props['color'])
         self.figure.canvas.draw_idle()
         self.path_memo = None
-
-    def get_adjacency_matrix(self):
-        matrix = [[0] * len(self.graph.nodes) for _ in range(len(self.graph.nodes)) ]
-        for u, v in self.graph.edges:
-            matrix[u][v] = matrix[v][u] = float(self.graph.edge_label_artists[(u, v)].get_text())
-        return matrix

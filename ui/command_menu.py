@@ -37,27 +37,7 @@ class CommandMenu(QWidget):
         w = RandomizeGraphPopUp()
         vertex_count = w.getResults()
         if vertex_count and vertex_count > 1:
-                start = time.time()
-                graph = randomize_graph(vertex_count, vertex_count - 1)
-                end = time.time()
-                self.parent.set_graph(graph)
-                self.parent.output_to_info(f"Graph was generated in {end - start}s")
-    
+            self.parent.randomize_graph(vertex_count, vertex_count - 1)
+                
     def help_btn_clicked(self):
         pass
-
-def randomize_graph(vertices_count, degree = 1, max_weight = 100):
-    if vertices_count <= 0:
-        raise ValueError(f"edges count must be greater or equal vertices_count-1")
-    if degree < 1:
-        raise ValueError(f"edges count must be lesser or equal to (vertices_count ** 2 - vertices_count) / 2")
-    from networkx.generators.random_graphs import random_regular_graph
-    gr = random_regular_graph(degree, vertices_count)
-    gr = gr.to_undirected()
-    weights = {}
-    for (u,v,w) in gr.edges(data=True):
-        gr.edges[u,v]['weight'] = random_weight()
-    return gr
-
-def random_weight(lower=1, upper=100):
-    return randint(lower, upper)

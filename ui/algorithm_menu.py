@@ -1,18 +1,29 @@
 from PyQt5.QtWidgets import QWidget,QTextEdit,QVBoxLayout,QPushButton
 
 class AlgorithmMenu(QWidget):
-    def __init__(self,parent=None):
-            super().__init__(parent)
+    def __init__(self,cfg, parent=None):
+        super().__init__(parent)
 
-            self.textEdit = QTextEdit()
-            self.btnPress1 = QPushButton("Clear")
-            self.textEdit.setReadOnly(True)
-            layout = QVBoxLayout()
-            layout.addWidget(self.textEdit)
-            layout.addWidget(self.btnPress1)
-            self.setLayout(layout)
+        self.parent = parent
+        layout = QVBoxLayout()
+        all_paths = QPushButton(cfg['text']['all_paths_btn_text'])
+        all_paths.clicked.connect(self.calc_all_paths)
+        layout.addWidget(all_paths)
+        brute_force_button = QPushButton(cfg['text']['bruteforce_btn_text'])
+        brute_force_button.clicked.connect(self.calc_with_brute_force)
+        layout.addWidget(brute_force_button)
+        greedy_button = QPushButton(cfg['text']['greedy_btn_text'])
+        greedy_button.clicked.connect(self.calc_with_greedy_search)
+        layout.addWidget(greedy_button)
 
-            self.btnPress1.clicked.connect(self.btnPress1_Clicked)
+        self.setLayout(layout)
 
-    def btnPress1_Clicked(self):
-            self.clear()
+
+    def calc_all_paths(self):
+        self.parent.calc_all_paths()
+
+    def calc_with_brute_force(self):
+        self.parent.calc_with_brute_force()
+
+    def calc_with_greedy_search(self):
+        self.parent.calc_with_greedy_search()
