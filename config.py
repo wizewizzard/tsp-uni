@@ -9,6 +9,7 @@ def get_config():
             "all_paths_btn_text": "Вывести все пути",
             "bruteforce_btn_text": "Решение полным перебором",
             "greedy_btn_text":"Решение жадным алгоритмом",
+            "dp_btn_text": "Решение с помощью динамического программирования"
         },
         "size": {
             "width": 1480,

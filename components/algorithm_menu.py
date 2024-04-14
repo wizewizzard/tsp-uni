@@ -15,6 +15,9 @@ class AlgorithmMenu(QWidget):
         greedy_button = QPushButton(cfg['text']['greedy_btn_text'])
         greedy_button.clicked.connect(self.calc_with_greedy_search)
         layout.addWidget(greedy_button)
+        dp_button = QPushButton(cfg['text']['dp_btn_text'])
+        dp_button.clicked.connect(self.calc_with_dynamic_programming)
+        layout.addWidget(dp_button)
 
         self.setLayout(layout)
 
@@ -27,3 +30,6 @@ class AlgorithmMenu(QWidget):
 
     def calc_with_greedy_search(self):
         self.parent.calc_with_greedy_search()
+
+    def calc_with_dynamic_programming(self):
+        self.parent.calc_with_dynamic_programming()

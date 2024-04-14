@@ -4,6 +4,8 @@ import traceback
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
+
+from algorithms.dynamic_programming import DynamicProgramming
 from config import get_config
 from components.algorithm_menu import AlgorithmMenu
 from components.graph import MplCanvas
@@ -124,7 +126,20 @@ class MainWindow(Qt.QMainWindow):
 
     # динамическое программирование
     def calc_with_dynamic_programming(self):
-        self.output_to_info(f"calculating with dynamic programming...")
+        if self.G == None:
+            self.output_error(f"Создайте граф.")
+            return
+        self.output_to_info(f"Вычисление кратчайшего пути с помощью динамического программирования...")
+        try:
+            self.canvas.remove_path_highlight()
+            path, path_len = DynamicProgramming().tsp(matrix=self.G)
+            self.canvas.highlight_path(path)
+            self.output_to_info(path_with_arrows((path, round(path_len, 1))))
+            self.output_to_info(f"Вычисление кратчайшего пути с помощью динамического программирования завершено.")
+        except Exception as err:
+            self.output_error(f"Вычисление кратчайшего пути с помощью динамического программирования завершилось с ошибкой.")
+            traceback.print_exception(*sys.exc_info())
+            print(f"Unexpected {err=}, {type(err)=}")
 
     # graph update
     def update_graph(self, matrix):
