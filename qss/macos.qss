@@ -14,6 +14,7 @@ QPushButton, QToolButton, QCommandLinkButton{
     color: #616161;
     font-weight: bold;
     background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 #fbfdfd, stop:0.5 #ffffff, stop:1 #fbfdfd);
+    padding: 10px;
 }
 QPushButton::default, QToolButton::default, QCommandLinkButton::default{
     border: 2px solid transparent;

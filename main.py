@@ -4,7 +4,6 @@ import traceback
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
-from random import uniform
 from config import get_config
 from components.algorithm_menu import AlgorithmMenu
 from components.graph import MplCanvas
@@ -16,11 +15,13 @@ from algorithms.brute_force import BruteForce
 from algorithms.greedy import Greedy
 from algorithms.all_paths import AllPaths
 from utils import path_with_arrows
+from utils import randomize_graph_fn
 
 matplotlib.use("Qt5Agg")
 
+
 class MainWindow(Qt.QMainWindow):
-    
+
     def __init__(self, cfg, parent=None):
         super(MainWindow, self).__init__(parent)
         self.edit_mode = False
@@ -65,7 +66,7 @@ class MainWindow(Qt.QMainWindow):
 
         self.central_widget = Qt.QWidget()
         self.central_widget.setLayout(main_layout)
-    
+
         self.setCentralWidget(self.central_widget)
 
     #подсчет всех путей
@@ -85,7 +86,6 @@ class MainWindow(Qt.QMainWindow):
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
 
-        
     # полный перебор
     def calc_with_brute_force(self):
         if self.G == None:
@@ -94,15 +94,14 @@ class MainWindow(Qt.QMainWindow):
         self.output_to_info(f"Вычисление кратчайшего пути полным перебором...")
         try:
             self.canvas.remove_path_highlight()
-            path, len = BruteForce().tsp(matrix=self.G)
+            path, path_len = BruteForce().tsp(matrix=self.G)
             self.canvas.highlight_path(path)
-            self.output_to_info(path_with_arrows((path, round(len, 1))))
+            self.output_to_info(path_with_arrows((path, round(path_len, 1))))
             self.output_to_info(f"Вычисление кратчайшего пути полным перебором завершено.")
         except Exception as err:
             self.output_error(f"Вычисление кратчайшего пути полным перебором завершилось с ошибкой.")
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
-
 
     # жадный перебор
     def calc_with_greedy_search(self):
@@ -132,10 +131,10 @@ class MainWindow(Qt.QMainWindow):
         if self.G == None:
             self.output_error(f"Создайте граф.")
             return
-        
 
-        self.canvas.set_matrix(self.G)
-        self.table.set_matrix(self.G)    
+        self.G = matrix
+        self.canvas.set_matrix(self.G, recreate=False)
+        self.table.set_matrix(self.G)
 
     # рандомный граф
     def randomize_graph(self, vertex_count, degree):
@@ -143,31 +142,15 @@ class MainWindow(Qt.QMainWindow):
         self.G = randomize_graph_fn(vertex_count, degree)
         end = time.time()
         self.canvas.set_matrix(self.G)
-        self.table.set_matrix(self.G)     
+        self.table.set_matrix(self.G)
         self.output_to_info(f"Graph was generated in {end - start}s")
 
     def output_error(self, error):
         self.output_to_info(f"<span style=\" font-weight:600; color:#ff0000;\" >{error}</span>")
-    
+
     def output_to_info(self, text):
-        self.info_box.append(text)    
+        self.info_box.append(text)
 
-
-def randomize_graph_fn(vertices_count, degree = 1, max_weight = 100):
-    if vertices_count <= 0:
-        raise ValueError(f"edges count must be greater or equal vertices_count-1")
-    if degree < 1:
-        raise ValueError(f"edges count must be lesser or equal to (vertices_count ** 2 - vertices_count) / 2")
-    from networkx.generators.random_graphs import random_regular_graph
-    gr = random_regular_graph(degree, vertices_count)
-    gr = gr.to_undirected()
-    matrix = [[0] * vertices_count for _ in range(vertices_count)]
-    for (u,v) in gr.edges():
-        matrix[u][v] = matrix[v][u] = random_weight()
-    return matrix
-
-def random_weight(lower=1, upper=100):
-    return round(uniform(lower,upper), 1)
 
 def main():
     cfg = get_config()
@@ -178,6 +161,7 @@ def main():
         app.setStyleSheet(_style)
     window.show()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()
