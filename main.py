@@ -4,15 +4,14 @@ import traceback
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import Qt, QtCore
 import matplotlib
-from random import randint, random, uniform
+from random import uniform
 from config import get_config
-from ui.algorithm_menu import AlgorithmMenu
-from ui.graph import MplCanvas
-from ui.adjacency_matrix import AdjacencyMatrixQWidget
-from ui.greedy_algorithm_pop import GreedyAlgorithmPopUp
-from ui.info import InfoOutput
-from ui.command_menu import CommandMenu
-from ui.generate_graph_popup import RandomizeGraphPopUp
+from components.algorithm_menu import AlgorithmMenu
+from components.graph import MplCanvas
+from components.adjacency_matrix import AdjacencyMatrixQWidget
+from components.greedy_algorithm_pop import GreedyAlgorithmPopUp
+from components.info import InfoOutput
+from components.command_menu import CommandMenu
 from algorithms.brute_force import BruteForce
 from algorithms.greedy import Greedy
 from algorithms.all_paths import AllPaths

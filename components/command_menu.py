@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import QWidget,QTextEdit,QVBoxLayout,QPushButton,QLineEdit,
 from PyQt5.QtGui import *
 from random import randint, random
 import time
-from ui.generate_graph_popup import RandomizeGraphPopUp
-from ui.build_graph_by_adjacency_matrix import BuildGraphByAjacencyMatrixPopUp
+from components.generate_graph_popup import RandomizeGraphPopUp
+from components.build_graph_by_adjacency_matrix import BuildGraphByAjacencyMatrixPopUp
 
 class CommandMenu(QWidget):
     def __init__(self,
