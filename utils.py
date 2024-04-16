@@ -1,4 +1,4 @@
-from random import uniform
+from random import uniform, randint
 
 
 def path_with_arrows(p):
@@ -24,4 +24,4 @@ def randomize_graph_fn(vertices_count, degree=1, max_weight=100):
 
 
 def random_weight(lower=1, upper=100):
-    return round(uniform(lower, upper), 1)
+    return randint(lower, upper)

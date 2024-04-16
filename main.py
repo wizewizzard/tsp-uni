@@ -1,11 +1,16 @@
 import sys
+import threading
 import time
 import traceback
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QComboBox, QVBoxLayout, QWidget, QLabel
 from PyQt5 import Qt, QtCore
 import matplotlib
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 
+from algorithms.bnb import BnB
 from algorithms.dynamic_programming import DynamicProgramming
+from components.conversion_window import ConversionWindow
 from config import get_config
 from components.algorithm_menu import AlgorithmMenu
 from components.graph import MplCanvas
@@ -22,14 +27,31 @@ from utils import randomize_graph_fn
 matplotlib.use("Qt5Agg")
 
 
+class BnBEvent:
+    def __init__(self, current_path, current_result, time_elapsed, completed):
+        self.current_path = current_path
+        self.current_result = current_result
+        self.time_elapsed = time_elapsed
+        self.completed = completed
+
+
+class CommunicateBnB(QtCore.QObject):
+    progress = QtCore.pyqtSignal(BnBEvent)
+
+
 class MainWindow(Qt.QMainWindow):
 
     def __init__(self, cfg, parent=None):
         super(MainWindow, self).__init__(parent)
-        self.edit_mode = False
+        self.current_calculation = None
+        self.result_poller = None
         self.initUI(cfg)
         self.show()
         self.G = None
+        self.communicate = CommunicateBnB()
+        self.communicate.progress.connect(self.accumulate_bnb_results)
+        self.bnb_runner = None
+        self.bnb_data_accumulator = []
 
     def initUI(self, cfg):
         self.resize(cfg['size']['width'], cfg['size']['height'])
@@ -144,13 +166,47 @@ class MainWindow(Qt.QMainWindow):
             end = time.time()
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, round(path_len, 1))))
-            self.output_to_info(f"Вычисление кратчайшего пути с помощью динамического программирования завершено.", end - start)
+            self.output_to_info(f"Вычисление кратчайшего пути с помощью динамического программирования завершено.",
+                                end - start)
 
         except Exception as err:
             self.output_error(
                 f"Вычисление кратчайшего пути с помощью динамического программирования завершилось с ошибкой.")
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
+
+    def calc_with_branch_and_bound(self):
+        if self.G == None:
+            self.output_error(f"Создайте граф.")
+            return
+        self.output_to_info(f"Вычисление кратчайшего пути методом ветвей и границ...")
+        try:
+            self.canvas.remove_path_highlight()
+            self.bnb_data_accumulator = []
+            self.bnb_runner = BnBRunner(bnb=BnB(self.G), communicate=self.communicate)
+            self.bnb_runner.start()
+
+        except Exception as err:
+            self.output_error(
+                f"Вычисление кратчайшего пути методом ветвей и границ завершилось с ошибкой.")
+            traceback.print_exception(*sys.exc_info())
+            print(f"Unexpected {err=}, {type(err)=}")
+
+    def accumulate_bnb_results(self, progress):
+        print(
+            f"Current res: {progress.current_path} - {progress.current_result}. Completed: {progress.completed}. Time elapsed: {round(progress.time_elapsed, 3)}")
+        self.bnb_data_accumulator.append((progress.current_result, progress.time_elapsed))
+        if progress.completed:
+            self.canvas.highlight_path(progress.current_path)
+            self.output_to_info(path_with_arrows((progress.current_path, progress.current_result)))
+            self.output_to_info(f"Вычисление кратчайшего пути методом ветвей и границ завершено.",
+                                progress.time_elapsed)
+            w = ConversionWindow(self.bnb_data_accumulator)
+            w.return_from_window()
+
+    def stop_calculation(self):
+        if self.bnb_runner is not None:
+            self.bnb_runner.stopped = True
 
     # graph update
     def update_graph(self, matrix):
@@ -180,6 +236,27 @@ class MainWindow(Qt.QMainWindow):
         else:
             self.info_box.append(text)
 
+
+class BnBRunner(threading.Thread):
+    def __init__(self, bnb, communicate):
+        super().__init__()
+        self.bnb = bnb
+        self.communicate = communicate
+        self.stopped = True
+
+    def run(self):
+        self.stopped = False
+        start = time.time()
+        self.bnb.start()
+        while self.bnb.is_alive() and self.stopped is False:
+            self.communicate.progress.emit(
+                BnBEvent(self.bnb.final_path, self.bnb.final_res, time.time() - start, False))
+            self.bnb.join(timeout=2)
+        if self.stopped:
+            self.bnb.stopped = True
+        self.bnb.join()
+        end = time.time()
+        self.communicate.progress.emit(BnBEvent(self.bnb.final_path, self.bnb.final_res, end - start, True))
 
 def main():
     cfg = get_config()

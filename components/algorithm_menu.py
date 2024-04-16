@@ -18,6 +18,9 @@ class AlgorithmMenu(QWidget):
         dp_button = QPushButton(cfg['text']['dp_btn_text'])
         dp_button.clicked.connect(self.calc_with_dynamic_programming)
         layout.addWidget(dp_button)
+        branch_and_bound_btn = QPushButton(cfg['text']['branch_and_bound_btn_text'])
+        branch_and_bound_btn.clicked.connect(self.calc_with_branch_and_bound)
+        layout.addWidget(branch_and_bound_btn)
 
         self.setLayout(layout)
 
@@ -33,3 +36,6 @@ class AlgorithmMenu(QWidget):
 
     def calc_with_dynamic_programming(self):
         self.parent.calc_with_dynamic_programming()
+
+    def calc_with_branch_and_bound(self):
+        self.parent.calc_with_branch_and_bound()

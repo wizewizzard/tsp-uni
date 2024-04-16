@@ -43,7 +43,7 @@ class AdjacencyMatrixQWidget(QWidget):
         for i in range(self.vertex_count):
             for j in range(self.vertex_count):
                 print(self.table.item(i, j).text())
-                matrix = round(float(self.table.item(i, j).text()), 1)
+                matrix = int(self.table.item(i, j).text())
         self.parent.update_graph(matrix)
 
     #
@@ -52,7 +52,7 @@ class AdjacencyMatrixQWidget(QWidget):
             matrix = [[0] * self.vertex_count for _ in range(self.vertex_count)]
             for i in range(self.vertex_count):
                 for j in range(i, self.vertex_count):
-                    value1 = float(self.table.item(i, j).text())
+                    value1 = int(self.table.item(i, j).text())
                     matrix[i][j] = matrix[j][i] = value1
             self.parent.update_graph(matrix)
         except Exception as err:
