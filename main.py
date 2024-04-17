@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 
 from algorithms.bnb import BnB
 from algorithms.dynamic_programming import DynamicProgramming
-from components.conversion_window import ConversionWindow
+from components.conversion_window import ConversionWindow, ConversionPointEvent
 from config import get_config
 from components.algorithm_menu import AlgorithmMenu
 from components.graph import MplCanvas
@@ -39,6 +39,10 @@ class CommunicateBnB(QtCore.QObject):
     progress = QtCore.pyqtSignal(BnBEvent)
 
 
+class CommunicateConversion(QtCore.QObject):
+    point = QtCore.pyqtSignal(ConversionPointEvent)
+
+
 class MainWindow(Qt.QMainWindow):
 
     def __init__(self, cfg, parent=None):
@@ -51,7 +55,8 @@ class MainWindow(Qt.QMainWindow):
         self.communicate = CommunicateBnB()
         self.communicate.progress.connect(self.accumulate_bnb_results)
         self.bnb_runner = None
-        self.bnb_data_accumulator = []
+        self.communicateConversion = CommunicateConversion()
+
 
     def initUI(self, cfg):
         self.resize(cfg['size']['width'], cfg['size']['height'])
@@ -182,10 +187,11 @@ class MainWindow(Qt.QMainWindow):
         self.output_to_info(f"Вычисление кратчайшего пути методом ветвей и границ...")
         try:
             self.canvas.remove_path_highlight()
-            self.bnb_data_accumulator = []
             self.bnb_runner = BnBRunner(bnb=BnB(self.G), communicate=self.communicate)
             self.bnb_runner.start()
-
+            self.communicateConversion = CommunicateConversion()
+            w = ConversionWindow(communication=self.communicateConversion)
+            w.return_from_window()
         except Exception as err:
             self.output_error(
                 f"Вычисление кратчайшего пути методом ветвей и границ завершилось с ошибкой.")
@@ -195,14 +201,13 @@ class MainWindow(Qt.QMainWindow):
     def accumulate_bnb_results(self, progress):
         print(
             f"Current res: {progress.current_path} - {progress.current_result}. Completed: {progress.completed}. Time elapsed: {round(progress.time_elapsed, 3)}")
-        self.bnb_data_accumulator.append((progress.current_result, progress.time_elapsed))
+        self.communicateConversion.point.emit(ConversionPointEvent(x=progress.time_elapsed, y=progress.current_result))
         if progress.completed:
             self.canvas.highlight_path(progress.current_path)
             self.output_to_info(path_with_arrows((progress.current_path, progress.current_result)))
             self.output_to_info(f"Вычисление кратчайшего пути методом ветвей и границ завершено.",
                                 progress.time_elapsed)
-            w = ConversionWindow(self.bnb_data_accumulator)
-            w.return_from_window()
+            # self.communicateConversion.point.disconnect()
 
     def stop_calculation(self):
         if self.bnb_runner is not None:
@@ -249,14 +254,15 @@ class BnBRunner(threading.Thread):
         start = time.time()
         self.bnb.start()
         while self.bnb.is_alive() and self.stopped is False:
+            print(f'tick {self.stopped}')
             self.communicate.progress.emit(
                 BnBEvent(self.bnb.final_path, self.bnb.final_res, time.time() - start, False))
             self.bnb.join(timeout=2)
-        if self.stopped:
-            self.bnb.stopped = True
+        self.bnb.stopped = True
         self.bnb.join()
         end = time.time()
         self.communicate.progress.emit(BnBEvent(self.bnb.final_path, self.bnb.final_res, end - start, True))
+
 
 def main():
     cfg = get_config()
