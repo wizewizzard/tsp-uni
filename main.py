@@ -52,6 +52,7 @@ class MainWindow(Qt.QMainWindow):
         self.communicate.stop_signal.connect(self.stop_calculation)
         self.threadpool = QThreadPool()
         self.initUI(cfg)
+        self.setWindowTitle('Методы оптимизации')
         self.show()
         self.G = None
         self.bnb_runner = None
@@ -112,9 +113,9 @@ class MainWindow(Qt.QMainWindow):
             end = time.time()
             for (p, l) in paths:
                 self.output_to_info(path_with_arrows((p, round(l, 1))))
-            self.output_to_info(f"ВВычисление набора всех путей завершено.", end - start)
+            self.output_to_info(f"Вычисление набора всех путей завершено", end - start)
         except Exception as err:
-            self.output_error(f"Вычисление набора всех путей завершилось с ошибкой.")
+            self.output_error(f"Вычисление набора всех путей завершилось с ошибкой")
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
 
@@ -131,9 +132,9 @@ class MainWindow(Qt.QMainWindow):
             end = time.time()
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, round(path_len, 1))))
-            self.output_to_info(f"Вычисление кратчайшего пути полным перебором завершено.", end - start)
+            self.output_to_info(f"Вычисление кратчайшего пути полным перебором завершено", end - start)
         except Exception as err:
-            self.output_error(f"Вычисление кратчайшего пути полным перебором завершилось с ошибкой.")
+            self.output_error(f"Вычисление кратчайшего пути полным перебором завершилось с ошибкой")
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
 
@@ -152,9 +153,9 @@ class MainWindow(Qt.QMainWindow):
             end = time.time()
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, round(path_len, 1))))
-            self.output_to_info(f"Вычисление кратчайшего пути жадным алгоритмом завершено.", end - start)
+            self.output_to_info(f"Вычисление кратчайшего пути жадным алгоритмом завершено", end - start)
         except Exception as err:
-            self.output_error(f"Вычисление кратчайшего пути жадным алгоритмом завершилось с ошибкой.")
+            self.output_error(f"Вычисление кратчайшего пути жадным алгоритмом завершилось с ошибкой")
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
 
@@ -171,11 +172,11 @@ class MainWindow(Qt.QMainWindow):
             end = time.time()
             self.canvas.highlight_path(path)
             self.output_to_info(path_with_arrows((path, round(path_len, 1))))
-            self.output_to_info(f"Вычисление кратчайшего пути с помощью динамического программирования завершено.",
+            self.output_to_info(f"Вычисление кратчайшего пути с помощью динамического программирования завершено",
                                 end - start)
         except Exception as err:
             self.output_error(
-                f"Вычисление кратчайшего пути с помощью динамического программирования завершилось с ошибкой.")
+                f"Вычисление кратчайшего пути с помощью динамического программирования завершилось с ошибкой")
             traceback.print_exception(*sys.exc_info())
             print(f"Unexpected {err=}, {type(err)=}")
 
