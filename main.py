@@ -24,6 +24,7 @@ from algorithms.greedy import Greedy
 from algorithms.all_paths import AllPaths
 from utils import path_with_arrows
 from utils import randomize_graph_fn
+import numpy as np
 
 matplotlib.use("Qt5Agg")
 
@@ -199,8 +200,8 @@ class MainWindow(Qt.QMainWindow):
     def accumulate_bnb_results(self, progress):
         print(
             f"Current res: {progress.current_path} - {progress.current_result}. Completed: {progress.completed}. Time elapsed: {round(progress.time_elapsed, 3)}")
-        self.communicate.point.emit(ConversionPointEvent(x=progress.time_elapsed, y=progress.current_result))
-        if progress.time_elapsed > 12 and progress.completed is not True and self.conversion_window is not None:
+        self.communicate.point.emit(ConversionPointEvent(x=progress.time_elapsed, y=progress.current_result, terminate=progress.completed))
+        if progress.time_elapsed > 3 and progress.completed is not True and self.conversion_window is not None:
             self.conversion_window.show()
         if progress.completed:
             self.canvas.highlight_path(progress.current_path)
@@ -211,7 +212,7 @@ class MainWindow(Qt.QMainWindow):
     def stop_calculation(self, event):
         if self.bnb_runner is not None:
             self.bnb_runner.stopped = True
-        self.conversion_window = None
+        # self.conversion_window = None
 
     # graph update
     def update_graph(self, matrix):
@@ -254,11 +255,14 @@ class BnBRunner(QRunnable):
         self.stopped = False
         start = time.time()
         self.bnb.start()
-        while self.bnb.is_alive() and self.stopped is False:
+        probe_times = np.logspace(start=4, stop=0, base=0.1, num=100, endpoint=True) * 3600
+        i = 0
+        while self.bnb.is_alive() and self.stopped is False and i < 100:
             print(f'tick {self.stopped}')
             self.communicate.progress.emit(
                 BnBEvent(self.bnb.final_path, self.bnb.final_res, time.time() - start, False))
-            self.bnb.join(timeout=2)
+            self.bnb.join(probe_times[i])
+            i+=1
         self.bnb.stopped = True
         self.bnb.join()
         end = time.time()
