@@ -14,23 +14,16 @@ class CommandMenu(QWidget):
         super().__init__(parent)
 
         self.parent = parent
-        # lbl = QLabel(self)
-        # lbl.setText(cfg['text']['command_pallete_label'])
         self.set_graph_cb = set_graph_cb
         self.output_info_cb = output_info_cb
         self.randomize_graph_btn = QPushButton(cfg['text']['randomize_graph_btn_text'])
         self.build_graph_graph_btn = QPushButton(cfg['text']['build_graph_graph_btn_text'])
-        self.stop_calculation_btn = QPushButton(cfg['text']['stop_calculation_text'])
         layout = QVBoxLayout()
-        # layout.addWidget(lbl)
         layout.addWidget(self.randomize_graph_btn)
-        layout.addWidget(self.stop_calculation_btn)
-        # layout.addWidget(self.build_graph_graph_btn)
         self.setLayout(layout)
 
         self.randomize_graph_btn.clicked.connect(self.randomize_graph_btn_clicked)
         self.build_graph_graph_btn.clicked.connect(self.build_graph_graph_btn_clicked)
-        self.stop_calculation_btn.clicked.connect(self.stop_calculation_btn_clicked)
 
 
     def build_graph_graph_btn_clicked(self):
@@ -46,5 +39,3 @@ class CommandMenu(QWidget):
     def help_btn_clicked(self):
         pass
 
-    def stop_calculation_btn_clicked(self):
-        self.parent.stop_calculation()

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QLineEdit, QVBoxLayout, QPushButton, QTableWidget
+from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QPushButton, QTableWidget
 from PyQt5 import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -7,34 +7,37 @@ import numpy as np
 
 class ConversionPointEvent:
     def __init__(self, x, y):
-        self.x = x;
+        self.x = x
         self.y = y
 
-class ConversionWindow(QDialog):
-    def __init__(self, communication):
+class ConversionWindow(QWidget):
+    def __init__(self, communication, cfg):
         super().__init__()
         self.data = []
         self.communication = communication
         self.communication.point.connect(self.append_point)
 
-        self.setGeometry(0, 0, 800, 600)
-        self.ok_btn = QPushButton("Ok", self)
+        self.setGeometry(0, 0, 1024, 800)
+        self.stop_calculation_btn = QPushButton(cfg['text']['stop_calculation_text'])
+        # self.ok_btn = QPushButton("Ok", self)
         self.fig = Figure()
         layout = QVBoxLayout()
         self.canvas = FigureCanvas(self.fig)
-        self.ok_btn.clicked.connect(self.accept)
+        # self.ok_btn.clicked.connect(self.accept)
         self.axes = self.fig.add_subplot(111)
 
         layout.addWidget(self.canvas)
-        layout.addWidget(self.ok_btn)
+        layout.addWidget(self.stop_calculation_btn)
+        # layout.addWidget(self.ok_btn)
         self.setLayout(layout)
+        self.stop_calculation_btn.clicked.connect(self.closeEvent)
 
-    def return_from_window(self):
-        self.exec_()
+    def closeEvent(self, event):
+        self.communication.stop_signal.emit(True)
+        self.close()
 
     def append_point(self, point):
         self.data.append((point.x, point.y))
-        print(f"Recevied: {(point.x, point.y)}")
         if len(self.data) > 4:
             data = np.array(self.data)
             x, y = data.T

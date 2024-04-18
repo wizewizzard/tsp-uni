@@ -1,5 +1,6 @@
 import math
 import threading
+import time
 
 maxsize = float('inf')
 
@@ -142,3 +143,5 @@ class BnB(threading.Thread):
         # Call to TSPRec for curr_weight
         # equal to 0 and level 1
         self.TSPRec(adj, curr_bound, 0, 1, visited)
+        print("Bnb thread stopped")
+        # time.sleep(100)
